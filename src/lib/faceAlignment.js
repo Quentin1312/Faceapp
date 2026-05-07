@@ -3,8 +3,9 @@ const MODEL_URL =
   'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'
 
 // Target eye positions in the 800x800 output canvas
-const TARGET_LEFT_EYE  = { x: 280, y: 300 }
-const TARGET_RIGHT_EYE = { x: 520, y: 300 }
+// Écart réduit à 160px (vs 240 avant) pour moins zoomer et garder plus de contexte
+const TARGET_LEFT_EYE  = { x: 320, y: 270 }
+const TARGET_RIGHT_EYE = { x: 480, y: 270 }
 
 let landmarker = null
 let initPromise = null
