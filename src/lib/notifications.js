@@ -1,34 +1,19 @@
-import { pick, NOTIF_TITLES, NOTIF_BODIES } from './beauf'
+import { pick, NOTIF_10H_TITLES, NOTIF_10H_BODIES, NOTIF_16H_TITLES, NOTIF_16H_BODIES, NOTIF_22H_TITLES, NOTIF_22H_BODIES } from './beauf'
 
-const STORAGE_KEY = 'facedaily-notif-time'
-const LAST_NOTIF_KEY = 'facedaily-notif-last'
+const KEY_10H = 'facedaily-notif-10h'
+const KEY_16H = 'facedaily-notif-16h'
+const KEY_22H = 'facedaily-notif-22h'
 
-let _pageTimer = null
+let _timer10h = null
+let _timer16h = null
+let _timer22h = null
 
-export function getNotifTime() {
-  return localStorage.getItem(STORAGE_KEY) || '09:00'
+function todayId() {
+  const d = new Date()
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
 }
 
-export function setNotifTime(time) {
-  localStorage.setItem(STORAGE_KEY, time)
-}
-
-export async function requestPermission() {
-  if (!('Notification' in window)) return 'unsupported'
-  if (Notification.permission === 'granted') return 'granted'
-  if (Notification.permission === 'denied') return 'denied'
-  const result = await Notification.requestPermission()
-  return result
-}
-
-export function getPermission() {
-  if (!('Notification' in window)) return 'unsupported'
-  return Notification.permission
-}
-
-async function fireNotif() {
-  const title = pick(NOTIF_TITLES)
-  const body = pick(NOTIF_BODIES)
+async function fire(title, body) {
   const reg = await navigator.serviceWorker?.ready.catch(() => null)
   if (reg) {
     reg.showNotification(title, {
@@ -43,51 +28,87 @@ async function fireNotif() {
   }
 }
 
-// Envoi immédiat pour tester
+export async function requestPermission() {
+  if (!('Notification' in window)) return 'unsupported'
+  if (Notification.permission === 'granted') return 'granted'
+  if (Notification.permission === 'denied') return 'denied'
+  return Notification.requestPermission()
+}
+
+export function getPermission() {
+  if (!('Notification' in window)) return 'unsupported'
+  return Notification.permission
+}
+
 export async function sendTestNotif() {
   if (Notification.permission !== 'granted') return
-  await fireNotif()
+  await fire(pick(NOTIF_10H_TITLES), pick(NOTIF_10H_BODIES))
 }
 
 // Appelé au chargement et sur visibilitychange
 export async function checkAndNotify(todayPhotoExists) {
   if (Notification.permission !== 'granted') return
-  if (todayPhotoExists) return
-
-  const [hh, mm] = getNotifTime().split(':').map(Number)
   const now = new Date()
-  const target = new Date()
-  target.setHours(hh, mm, 0, 0)
+  const h = now.getHours()
+  const tid = todayId()
 
-  if (now < target) return
-
-  const lastNotif = localStorage.getItem(LAST_NOTIF_KEY)
-  const todayId = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`
-  if (lastNotif === todayId) return
-
-  localStorage.setItem(LAST_NOTIF_KEY, todayId)
-  await fireNotif()
+  if (h >= 10 && !todayPhotoExists && localStorage.getItem(KEY_10H) !== tid) {
+    localStorage.setItem(KEY_10H, tid)
+    await fire(pick(NOTIF_10H_TITLES), pick(NOTIF_10H_BODIES))
+    return
+  }
+  if (h >= 16 && !todayPhotoExists && localStorage.getItem(KEY_16H) !== tid) {
+    localStorage.setItem(KEY_16H, tid)
+    await fire(pick(NOTIF_16H_TITLES), pick(NOTIF_16H_BODIES))
+    return
+  }
+  if (h >= 22 && !todayPhotoExists && localStorage.getItem(KEY_22H) !== tid) {
+    localStorage.setItem(KEY_22H, tid)
+    await fire(pick(NOTIF_22H_TITLES), pick(NOTIF_22H_BODIES))
+  }
 }
 
-// Timer en-page : se déclenche même si l'app est ouverte en arrière-plan
+// Planifie les timers en-page pour les 3 créneaux
 export function schedulePageTimer(todayPhotoExists) {
-  if (_pageTimer) clearTimeout(_pageTimer)
+  if (_timer10h) clearTimeout(_timer10h)
+  if (_timer16h) clearTimeout(_timer16h)
+  if (_timer22h) clearTimeout(_timer22h)
   if (Notification.permission !== 'granted' || todayPhotoExists) return
 
-  const [hh, mm] = getNotifTime().split(':').map(Number)
   const now = new Date()
-  const target = new Date()
-  target.setHours(hh, mm, 0, 0)
-  if (target <= now) target.setDate(target.getDate() + 1)
+  const tid = todayId()
 
-  const ms = target.getTime() - now.getTime()
-  _pageTimer = setTimeout(async () => {
-    const lastNotif = localStorage.getItem(LAST_NOTIF_KEY)
+  function msUntil(h, m = 0) {
     const t = new Date()
-    const todayId = `${t.getFullYear()}-${t.getMonth()}-${t.getDate()}`
-    if (lastNotif !== todayId) {
-      localStorage.setItem(LAST_NOTIF_KEY, todayId)
-      await fireNotif()
-    }
-  }, ms)
+    t.setHours(h, m, 0, 0)
+    if (t <= now) t.setDate(t.getDate() + 1)
+    return t - now
+  }
+
+  if (localStorage.getItem(KEY_10H) !== tid) {
+    _timer10h = setTimeout(async () => {
+      if (localStorage.getItem(KEY_10H) !== todayId()) {
+        localStorage.setItem(KEY_10H, todayId())
+        await fire(pick(NOTIF_10H_TITLES), pick(NOTIF_10H_BODIES))
+      }
+    }, msUntil(10))
+  }
+
+  if (localStorage.getItem(KEY_16H) !== tid) {
+    _timer16h = setTimeout(async () => {
+      if (localStorage.getItem(KEY_16H) !== todayId()) {
+        localStorage.setItem(KEY_16H, todayId())
+        await fire(pick(NOTIF_16H_TITLES), pick(NOTIF_16H_BODIES))
+      }
+    }, msUntil(16))
+  }
+
+  if (localStorage.getItem(KEY_22H) !== tid) {
+    _timer22h = setTimeout(async () => {
+      if (localStorage.getItem(KEY_22H) !== todayId()) {
+        localStorage.setItem(KEY_22H, todayId())
+        await fire(pick(NOTIF_22H_TITLES), pick(NOTIF_22H_BODIES))
+      }
+    }, msUntil(22))
+  }
 }

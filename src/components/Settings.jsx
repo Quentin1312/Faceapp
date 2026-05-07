@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react'
-import { getNotifTime, setNotifTime, requestPermission, getPermission, sendTestNotif, schedulePageTimer } from '../lib/notifications'
+import { requestPermission, getPermission, sendTestNotif, schedulePageTimer } from '../lib/notifications'
 import { getAllPhotos } from '../lib/db'
 
 export default function Settings() {
-  const [time, setTime] = useState(getNotifTime())
   const [permission, setPermission] = useState(getPermission())
   const [stats, setStats] = useState({ total: 0, firstDate: null })
-  const [saved, setSaved] = useState(false)
   const [tested, setTested] = useState(false)
 
   useEffect(() => {
@@ -20,13 +18,7 @@ export default function Settings() {
   async function handleRequestPermission() {
     const result = await requestPermission()
     setPermission(result)
-  }
-
-  function saveTime() {
-    setNotifTime(time)
-    schedulePageTimer(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    if (result === 'granted') schedulePageTimer(false)
   }
 
   async function handleTest() {
@@ -42,38 +34,39 @@ export default function Settings() {
     unsupported: { text: 'Non supportées', color: 'text-white/30' },
   }[permission] || { text: '…', color: 'text-white/40' }
 
+  const schedule = [
+    { time: '10h00', label: 'Rappel du matin', desc: 'si pas de photo', emoji: '☀️' },
+    { time: '16h00', label: 'Rappel de l\'aprèm', desc: 'si toujours pas', emoji: '😤' },
+    { time: '22h00', label: 'Dernier appel', desc: 'si toujours pas', emoji: '🚨' },
+  ]
+
   return (
     <div className="px-6 pt-8 pb-24 flex flex-col gap-8">
       <h2 className="text-white font-semibold text-lg">Paramètres</h2>
 
       {/* Notifications section */}
       <section className="flex flex-col gap-4">
-        <p className="text-white/40 text-xs uppercase tracking-widest">Rappel quotidien</p>
+        <div className="flex items-center justify-between">
+          <p className="text-white/40 text-xs uppercase tracking-widest">Rappels quotidiens</p>
+          <p className={`text-xs ${permLabel.color}`}>{permLabel.text}</p>
+        </div>
 
         <div className="bg-surface rounded-2xl overflow-hidden border border-border">
-          <div className="flex items-center justify-between px-4 py-4">
-            <div>
-              <p className="text-white text-sm">Heure de rappel</p>
-              <p className={`text-xs mt-0.5 ${permLabel.color}`}>{permLabel.text}</p>
+          {schedule.map((s, i) => (
+            <div key={s.time}>
+              <div className="flex items-center justify-between px-4 py-3.5">
+                <div className="flex items-center gap-3">
+                  <span className="text-base">{s.emoji}</span>
+                  <div>
+                    <p className="text-white text-sm">{s.label}</p>
+                    <p className="text-white/35 text-[11px] mt-0.5">{s.desc}</p>
+                  </div>
+                </div>
+                <p className="text-white/50 text-sm tabular-nums">{s.time}</p>
+              </div>
+              {i < schedule.length - 1 && <div className="h-px bg-border" />}
             </div>
-            <input
-              type="time"
-              value={time}
-              onChange={e => setTime(e.target.value)}
-              className="bg-transparent text-white text-sm text-right outline-none"
-            />
-          </div>
-
-          <div className="h-px bg-border" />
-
-          <div className="h-px bg-border" />
-
-          <button
-            onClick={saveTime}
-            className="w-full py-3.5 text-center text-sm text-white active:bg-white/5 transition-colors"
-          >
-            {saved ? '✓ Enregistré' : 'Enregistrer l\'heure'}
-          </button>
+          ))}
         </div>
 
         {permission === 'granted' && (
@@ -99,10 +92,6 @@ export default function Settings() {
             iOS : installe l'app sur l'écran d'accueil via Safari pour recevoir des notifications.
           </p>
         )}
-
-        <p className="text-white/20 text-xs text-center px-4">
-          La notif s'envoie à l'heure choisie si l'app est ouverte ou en arrière-plan.
-        </p>
       </section>
 
       {/* Stats section */}

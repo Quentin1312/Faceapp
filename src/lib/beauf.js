@@ -88,23 +88,47 @@ export function annualVerdict(pct) {
   return '💀 Flemme absolue. Honte à toi.'
 }
 
-export const NOTIF_TITLES = [
-  '📸 T\'as oublié quelque chose ?',
-  '🔥 Tes fans attendent !',
-  '👀 On te surveille champion !',
-  '📸 Moment de gloire !',
-  '⏰ C\'est l\'heure beauté !',
+// 10h — rappel du matin, ton doux
+export const NOTIF_10H_TITLES = [
+  '☀️ Bonjour la beauté !',
+  '📸 Le beau gosse est réveillé ?',
+  '🌅 Y\'a une photo qui t\'attend...',
+  '☀️ Debout champion !',
+]
+export const NOTIF_10H_BODIES = [
+  'Ta belle gueule du matin se fait attendre.',
+  'Même le café peut attendre, pas la photo.',
+  'T\'as toute la journée... ou pas.',
+  'Allez, une petite photo et après t\'es tranquille.',
+  'Mémé a déjà pris la sienne. Rattrape-toi.',
 ]
 
-export const NOTIF_BODIES = [
-  'Bouge-toi de prendre ta photo, gros lard !',
-  'Ta belle gueule va pas se photographier toute seule !',
-  'Le Ricard peut attendre, la photo non !',
-  'Champion, c\'est l\'heure de ta capture quotidienne !',
-  'Même Mémé a pensé à prendre sa photo ce matin !',
-  'La belle gueule du jour se fait attendre !',
-  'T\'as une tête à faire peur mais on s\'en fout, prends la photo !',
-  'Allez le grand, c\'est l\'heure !',
-  'La série est en jeu, lâche pas maintenant !',
-  'Vas-y chéri, souris pour la postérité !',
+// 16h — rappel de l'aprèm, ton insistant
+export const NOTIF_16H_TITLES = [
+  '😤 Toujours pas ?!',
+  '⏰ Il est 16h champion...',
+  '🥃 On attend encore...',
+  '📸 Sérieux là ?!',
+]
+export const NOTIF_16H_BODIES = [
+  'Ta belle gueule se dégrade à chaque heure qui passe.',
+  'C\'est pas sorcier, t\'appuies sur un bouton !',
+  'Le Ricard a bon dos, mais t\'as encore le temps.',
+  'On va pas y passer la nuit quand même...',
+  'T\'as raté le matin, rate pas l\'aprèm aussi.',
+]
+
+// 22h — dernier appel, ton désespéré
+export const NOTIF_22H_TITLES = [
+  '🚨 Dernier appel !',
+  '💀 Minuit approche...',
+  '😱 La série est en danger !',
+  '🌙 Dernière chance beauté !',
+]
+export const NOTIF_22H_BODIES = [
+  'T\'as encore 2h avant de perdre ta série. Bouge-toi.',
+  'La photo ou la mort de la série. T\'as le choix.',
+  'Demain tu regretteras. Ce soir t\'as encore le temps.',
+  'Même en pyjama. Même avec la tête défaite. On s\'en fout.',
+  'C\'est maintenant ou jamais. Et jamais c\'est une honte.',
 ]
