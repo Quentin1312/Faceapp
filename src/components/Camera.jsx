@@ -134,7 +134,7 @@ export default function Camera({ onCaptureDone }) {
     ctx.clearRect(0, 0, W, H)
 
     const fw = Math.min(W, H) * 0.74, fh = fw * 1.18
-    const fx = (W - fw) / 2, fy = H * 0.09
+    const fx = (W - fw) / 2, fy = (H - fh) / 2
 
     ctx.fillStyle = 'rgba(0,0,0,0.6)'
     ctx.fillRect(0, 0, W, H)
