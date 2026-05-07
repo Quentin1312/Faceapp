@@ -1,14 +1,17 @@
 const TABS = [
-  { id: 'camera', label: 'Capture', icon: CameraIcon },
-  { id: 'timeline', label: 'Photos', icon: GridIcon },
+  { id: 'camera',   label: 'Capture',    icon: CameraIcon },
+  { id: 'timeline', label: 'Photos',     icon: GridIcon },
   { id: 'calendar', label: 'Calendrier', icon: CalendarIcon },
-  { id: 'video', label: 'Vidéo', icon: VideoIcon },
-  { id: 'settings', label: 'Réglages', icon: GearIcon },
+  { id: 'video',    label: 'Vidéo',      icon: VideoIcon },
+  { id: 'settings', label: 'Réglages',   icon: GearIcon },
 ]
 
 export default function BottomNav({ active, onChange }) {
   return (
-    <nav className="fixed bottom-0 inset-x-0 bg-black/90 backdrop-blur border-t border-white/10 pb-safe z-40">
+    <nav
+      className="shrink-0 bg-black border-t border-white/10"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+    >
       <div className="flex">
         {TABS.map(tab => {
           const Icon = tab.icon

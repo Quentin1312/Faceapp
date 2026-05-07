@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { getAllPhotos, deletePhoto } from '../lib/db'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import ComparisonSlider from './ComparisonSlider'
 
 export default function Timeline({ refreshKey }) {
   const [photos, setPhotos] = useState([])
@@ -51,14 +52,19 @@ export default function Timeline({ refreshKey }) {
                 {format(new Date(p.date), 'd MMM', { locale: fr })}
               </p>
             </div>
+            {p.mood && (
+              <div className="absolute top-1 right-1 text-base leading-none">
+                {p.mood}
+              </div>
+            )}
           </button>
         ))}
       </div>
 
-      {/* Photo detail modal */}
       {selected && (
         <PhotoModal
           photo={selected}
+          allPhotos={photos}
           onClose={() => setSelected(null)}
           onDelete={async () => {
             await deletePhoto(selected.id)
@@ -71,12 +77,18 @@ export default function Timeline({ refreshKey }) {
   )
 }
 
-function PhotoModal({ photo, onClose, onDelete }) {
+function PhotoModal({ photo, allPhotos, onClose, onDelete }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [comparing, setComparing] = useState(false)
+
+  if (comparing) {
+    return <ComparisonSlider basePhoto={photo} onClose={() => setComparing(false)} />
+  }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col animate-fade-in">
-      <div className="flex items-center justify-between px-4 py-4 pt-safe">
+    <div className="fixed inset-0 z-50 bg-black flex flex-col animate-fade-in"
+      style={{ paddingTop: 'var(--sat)' }}>
+      <div className="flex items-center justify-between px-4 py-4">
         <button onClick={onClose} className="text-white/60 text-sm">← Retour</button>
         <p className="text-white/70 text-sm">
           {format(new Date(photo.date), 'EEEE d MMMM yyyy', { locale: fr })}
@@ -84,9 +96,34 @@ function PhotoModal({ photo, onClose, onDelete }) {
         <button onClick={() => setConfirmDelete(true)} className="text-red-500/70 text-sm">Suppr.</button>
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-4">
+      <div className="flex-1 relative flex items-center justify-center p-4 min-h-0">
         <img src={photo.url} alt={photo.id} className="max-w-full max-h-full rounded-2xl object-contain" />
+        {photo.mood && (
+          <div className="absolute top-6 right-6 text-3xl">{photo.mood}</div>
+        )}
       </div>
+
+      {(photo.note || photo.mood) && (
+        <div className="px-6 pb-4 shrink-0">
+          {photo.mood && !photo.note && (
+            <p className="text-white/40 text-sm text-center">{photo.mood}</p>
+          )}
+          {photo.note && (
+            <p className="text-white/70 text-sm text-center italic">"{photo.note}"</p>
+          )}
+        </div>
+      )}
+
+      {allPhotos.length > 1 && (
+        <div className="px-6 pb-4 shrink-0">
+          <button
+            onClick={() => setComparing(true)}
+            className="w-full py-3 rounded-2xl border border-white/15 text-white/70 text-sm active:bg-white/5"
+          >
+            Comparer avec le passé
+          </button>
+        </div>
+      )}
 
       {confirmDelete && (
         <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-4 px-8">

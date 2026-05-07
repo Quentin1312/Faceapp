@@ -34,9 +34,22 @@ export async function savePhoto(imageBlob, faceCoordinates = null) {
     date: now.getTime(),
     imageBlob,
     faceCoordinates,
+    mood: null,
+    note: '',
+    eyePositions: null,
   }
   await db.put(STORE, record)
   return record
+}
+
+// Merge fields into existing record (used for note/mood/alignment updates)
+export async function updatePhoto(dateId, fields) {
+  const db = await getDB()
+  const existing = await db.get(STORE, dateId)
+  if (!existing) return null
+  const updated = { ...existing, ...fields }
+  await db.put(STORE, updated)
+  return updated
 }
 
 export async function getPhotoByDate(date) {
@@ -82,7 +95,6 @@ export async function getStreak() {
   const todayId = toDateId(new Date())
   const yesterdayId = toDateId(new Date(Date.now() - 86400000))
 
-  // Streak only counts if we captured today or yesterday
   if (sorted[0].id !== todayId && sorted[0].id !== yesterdayId) return 0
 
   let streak = 0
