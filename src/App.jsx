@@ -29,7 +29,7 @@ export default function App() {
       }}
     >
       {/* min-h-0 est obligatoire pour que flex-1 ne déborde pas sur iOS */}
-      <main className="flex-1 overflow-y-auto min-h-0">
+      <main className="flex-1 overflow-y-auto min-h-0 overscroll-none">
         {tab === 'camera'    && <Camera onCaptureDone={handleCaptureDone} key={refreshKey} />}
         {tab === 'timeline'  && <Timeline refreshKey={refreshKey} />}
         {tab === 'calendar'  && <Calendar refreshKey={refreshKey} />}
