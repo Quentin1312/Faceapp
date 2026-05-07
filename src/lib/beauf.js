@@ -78,6 +78,16 @@ export function ricardScore(streak) {
   return null
 }
 
+export function annualVerdict(pct) {
+  if (pct >= 100) return '🏆 Parfait. T\'es une légende.'
+  if (pct >= 80)  return '🔥 Quasi parfait, respect champion !'
+  if (pct >= 60)  return '💪 Bien parti, continue comme ça !'
+  if (pct >= 40)  return '😐 Dans la moyenne du beauf...'
+  if (pct >= 20)  return '😴 Peut mieux faire chef...'
+  if (pct >= 5)   return '🥃 T\'as dû boire trop de Ricards'
+  return '💀 Flemme absolue. Honte à toi.'
+}
+
 export const NOTIF_TITLES = [
   '📸 T\'as oublié quelque chose ?',
   '🔥 Tes fans attendent !',

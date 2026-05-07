@@ -1,9 +1,11 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
 import { initFaceDetector, detectForVideo, analyzeFace } from '../lib/faceDetection'
 import { alignFace } from '../lib/faceAlignment'
-import { savePhoto, getTodayPhoto, getPhotoByDate, getStreak, updatePhoto } from '../lib/db'
+import { savePhoto, getTodayPhoto, getPhotoByDate, getStreak, updatePhoto, getAllPhotos, getPhotosForYear, toDateId } from '../lib/db'
 import ComparisonSlider from './ComparisonSlider'
-import { pick, FACE_DETECTED, CAPTURE_BTN, VERDICTS, ALIGNING, streakLabel, ricardScore } from '../lib/beauf'
+import { pick, FACE_DETECTED, CAPTURE_BTN, VERDICTS, ALIGNING, streakLabel, ricardScore, annualVerdict } from '../lib/beauf'
+import { format } from 'date-fns'
+import { fr } from 'date-fns/locale'
 
 export default function Camera({ onCaptureDone }) {
   const videoRef = useRef(null)
@@ -381,61 +383,141 @@ function FaceIcon({ active }) {
 }
 
 function AlreadyCaptured({ photo, capturedUrl, yearAgoUrl, streak, verdict, onCompare }) {
+  const [yearCount, setYearCount] = useState(0)
+  const [last7, setLast7] = useState([])
   const ricard = ricardScore(streak)
+  const now = new Date()
+  const totalDays = (now.getFullYear() % 4 === 0) ? 366 : 365
+  const pct = yearCount ? Math.round((yearCount / totalDays) * 100) : 0
+
+  useEffect(() => {
+    const year = now.getFullYear()
+    getPhotosForYear(year).then(p => setYearCount(p.length))
+    getAllPhotos().then(photos => {
+      const ids = new Set(photos.map(p => p.id))
+      const days = []
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(); d.setDate(d.getDate() - i)
+        days.push({ d, ok: ids.has(toDateId(d)), isToday: i === 0 })
+      }
+      setLast7(days)
+    })
+  }, [])
+
+  const DAY_LABELS = ['D', 'L', 'M', 'M', 'J', 'V', 'S']
 
   return (
-    <div className="flex flex-col items-center gap-5 px-6 py-8 h-full overflow-y-auto overscroll-none">
-      {/* Streak */}
-      <div className="flex flex-col items-center gap-1">
-        <div className="flex items-center gap-2">
-          <span className="text-orange-400 text-2xl">🔥</span>
-          <span className="text-white text-2xl font-bold">{streak}</span>
-          <span className="text-white/50 text-sm">jour{streak > 1 ? 's' : ''}</span>
-        </div>
-        <p className="text-white/30 text-xs">{streakLabel(streak)}</p>
-        {ricard && (
-          <p className="text-amber-400/70 text-[10px] mt-0.5">🥃 {ricard} Ricard{ricard > 1 ? 's' : ''} de beauté</p>
-        )}
+    <div className="flex flex-col h-full overflow-y-auto overscroll-none pb-8">
+
+      {/* Date header */}
+      <div className="px-5 pt-5 pb-3">
+        <p className="text-white/25 text-xs uppercase tracking-widest">
+          {format(now, 'EEEE d MMMM yyyy', { locale: fr })}
+        </p>
       </div>
 
-      {/* Today's photo */}
-      <div className="w-full max-w-xs aspect-square rounded-2xl overflow-hidden relative">
-        {capturedUrl && <img src={capturedUrl} alt="Aujourd'hui" className="w-full h-full object-cover animate-fade-in" />}
-        {photo?.mood && (
-          <div className="absolute top-2 right-2 text-2xl bg-black/40 rounded-full w-10 h-10 flex items-center justify-center">
-            {photo.mood}
+      {/* Photo + verdict */}
+      <div className="px-5">
+        <div className="relative rounded-3xl overflow-hidden aspect-square w-full">
+          {capturedUrl && (
+            <img src={capturedUrl} alt="Aujourd'hui" className="w-full h-full object-cover animate-fade-in" />
+          )}
+          {photo?.mood && (
+            <div className="absolute top-3 right-3 text-2xl bg-black/50 backdrop-blur rounded-full w-10 h-10 flex items-center justify-center">
+              {photo.mood}
+            </div>
+          )}
+          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent px-4 pt-8 pb-4">
+            <p className="text-white/90 text-sm italic text-center">{verdict}</p>
+            {photo?.note && (
+              <p className="text-white/50 text-xs text-center mt-1">"{photo.note}"</p>
+            )}
           </div>
-        )}
-        {/* Verdict badge */}
-        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent px-3 py-2">
-          <p className="text-white/80 text-xs text-center italic">{verdict}</p>
         </div>
       </div>
 
-      <p className="text-white/30 text-[10px] uppercase tracking-widest">Aujourd'hui · Photo enregistrée</p>
+      {/* Stats row */}
+      <div className="px-5 pt-4 grid grid-cols-2 gap-3">
+        {/* Streak card */}
+        <div className="bg-white/5 rounded-2xl p-4 border border-white/8">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-orange-400 text-xl">🔥</span>
+            <span className="text-white text-3xl font-bold">{streak}</span>
+          </div>
+          <p className="text-white/40 text-xs mt-1">jours de suite</p>
+          <p className="text-white/25 text-[10px] mt-0.5">{streakLabel(streak)}</p>
+          {ricard && <p className="text-amber-400/60 text-[9px] mt-1">🥃 ×{ricard}</p>}
+        </div>
 
-      {/* Note */}
-      {photo?.note && (
-        <p className="text-white/50 text-sm text-center max-w-xs italic">"{photo.note}"</p>
+        {/* Annual card */}
+        <div className="bg-white/5 rounded-2xl p-4 border border-white/8">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-blue-400 text-xl">📅</span>
+            <span className="text-white text-3xl font-bold">{yearCount}</span>
+          </div>
+          <p className="text-white/40 text-xs mt-1">cette année</p>
+          <p className="text-white/25 text-[10px] mt-0.5">{pct}% des jours</p>
+        </div>
+      </div>
+
+      {/* Annual progress bar */}
+      <div className="px-5 pt-4">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-white/30 text-[10px] uppercase tracking-widest">Progression {now.getFullYear()}</p>
+          <p className="text-white/30 text-[10px]">{yearCount}/{totalDays}</p>
+        </div>
+        <div className="h-2 bg-white/8 rounded-full overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-700"
+            style={{
+              width: `${pct}%`,
+              background: pct >= 80 ? 'linear-gradient(90deg,#f97316,#ef4444)'
+                        : pct >= 50 ? 'linear-gradient(90deg,#3b82f6,#8b5cf6)'
+                        : 'linear-gradient(90deg,#6b7280,#9ca3af)'
+            }}
+          />
+        </div>
+        <p className="text-white/40 text-[11px] mt-2 text-right italic">{annualVerdict(pct)}</p>
+      </div>
+
+      {/* Last 7 days */}
+      {last7.length > 0 && (
+        <div className="px-5 pt-5">
+          <p className="text-white/25 text-[10px] uppercase tracking-widest mb-3">7 derniers jours</p>
+          <div className="flex gap-2 justify-between">
+            {last7.map(({ d, ok, isToday }) => (
+              <div key={d.toISOString()} className="flex flex-col items-center gap-1.5 flex-1">
+                <p className="text-white/30 text-[9px] uppercase">{DAY_LABELS[d.getDay()]}</p>
+                <div className={`w-full aspect-square rounded-xl flex items-center justify-center
+                  ${isToday ? 'ring-1 ring-white/30' : ''}
+                  ${ok ? 'bg-green-500/25' : 'bg-white/5'}`}>
+                  <span className="text-base">{ok ? '✓' : '·'}</span>
+                </div>
+                <p className={`text-[9px] ${isToday ? 'text-white/60' : 'text-white/20'}`}>{d.getDate()}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* Compare button */}
-      <button
-        onClick={onCompare}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/15 text-white/60 text-sm active:bg-white/10 transition-colors"
-      >
-        <span>⇄</span> Comparer avec le passé
-      </button>
+      <div className="px-5 pt-5">
+        <button
+          onClick={onCompare}
+          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-white/12 text-white/60 text-sm active:bg-white/8 transition-colors"
+        >
+          ⇄ Comparer avec le passé
+        </button>
+      </div>
 
       {/* Year ago */}
       {yearAgoUrl && (
-        <>
-          <div className="w-full max-w-xs h-px bg-white/10" />
-          <p className="text-white/25 text-[10px] uppercase tracking-widest">Toi il y a 1 an 👀</p>
-          <div className="w-full max-w-xs aspect-square rounded-2xl overflow-hidden">
+        <div className="px-5 pt-5">
+          <p className="text-white/25 text-[10px] uppercase tracking-widest mb-3">Toi il y a 1 an 👀</p>
+          <div className="rounded-3xl overflow-hidden aspect-square w-full">
             <img src={yearAgoUrl} alt="Il y a 1 an" className="w-full h-full object-cover" />
           </div>
-        </>
+        </div>
       )}
     </div>
   )
