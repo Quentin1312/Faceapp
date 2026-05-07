@@ -14,6 +14,10 @@ export default function Camera({ onCaptureDone }) {
   const rafRef = useRef(null)
   const scanYRef = useRef(0)
   const faceOkRef = useRef(false)
+  const brightnessCanvasRef = useRef(null)
+  const frameCountRef = useRef(0)
+  const flashEnabledRef = useRef(false)
+  const torchSupportedRef = useRef(false)
 
   // phase: init | loading | ready | capturing | aligning | note | done | already | error
   const [phase, setPhase] = useState('init')
@@ -25,6 +29,10 @@ export default function Camera({ onCaptureDone }) {
   const [errorMsg, setErrorMsg] = useState('')
   const [showComparison, setShowComparison] = useState(false)
   const [flash, setFlash] = useState(false)
+  const [screenFlash, setScreenFlash] = useState(false)
+  const [flashEnabled, setFlashEnabled] = useState(false)
+  const [torchSupported, setTorchSupported] = useState(false)
+  const [isDark, setIsDark] = useState(false)
   const [faceMsg] = useState(() => pick(FACE_DETECTED))
   const [captureMsg] = useState(() => pick(CAPTURE_BTN))
   const [alignMsg] = useState(() => pick(ALIGNING))
@@ -62,10 +70,18 @@ export default function Camera({ onCaptureDone }) {
         audio: false,
       })
       streamRef.current = stream
+      const track = stream.getVideoTracks()[0]
+      const caps = track?.getCapabilities?.()
+      const hasTorch = !!caps?.torch
+      torchSupportedRef.current = hasTorch
+      setTorchSupported(hasTorch)
       if (videoRef.current) {
         videoRef.current.srcObject = stream
         await videoRef.current.play()
       }
+      brightnessCanvasRef.current = document.createElement('canvas')
+      brightnessCanvasRef.current.width = 32
+      brightnessCanvasRef.current.height = 32
       const det = await initFaceDetector()
       detectorRef.current = det
       setPhase('ready')
@@ -89,6 +105,16 @@ export default function Camera({ onCaptureDone }) {
       const { ok } = analyzeFace(result, video.videoWidth, video.videoHeight)
       if (ok !== faceOkRef.current) { faceOkRef.current = ok; setFaceOk(ok); if (!ok) scanYRef.current = 0 }
       drawOverlay(ok)
+      frameCountRef.current++
+      if (frameCountRef.current % 45 === 0 && brightnessCanvasRef.current) {
+        const bc = brightnessCanvasRef.current
+        const bctx = bc.getContext('2d')
+        bctx.drawImage(video, 0, 0, 32, 32)
+        const d = bctx.getImageData(0, 0, 32, 32).data
+        let s = 0
+        for (let i = 0; i < d.length; i += 4) s += d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114
+        setIsDark((s / (d.length / 4)) < 55)
+      }
       rafRef.current = requestAnimationFrame(loop)
     }
     rafRef.current = requestAnimationFrame(loop)
@@ -157,10 +183,26 @@ export default function Camera({ onCaptureDone }) {
     ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r); ctx.closePath()
   }
 
+  async function toggleFlash() {
+    const next = !flashEnabledRef.current
+    flashEnabledRef.current = next
+    setFlashEnabled(next)
+    if (torchSupportedRef.current) {
+      const track = streamRef.current?.getVideoTracks()[0]
+      try { await track?.applyConstraints({ advanced: [{ torch: next }] }) } catch (_) {}
+    }
+  }
+
   const doCapture = useCallback(async () => {
     if (!faceOkRef.current) return
     setPhase('capturing')
     cancelAnimationFrame(rafRef.current)
+
+    // Screen flash : illumine la scène si torch non supporté
+    if (flashEnabledRef.current && !torchSupportedRef.current) {
+      setScreenFlash(true)
+      await new Promise(r => setTimeout(r, 250))
+    }
 
     const video = videoRef.current
     const canvas = captureCanvasRef.current
@@ -174,6 +216,7 @@ export default function Camera({ onCaptureDone }) {
     ctx.drawImage(video, sx, sy, size, size, 0, 0, 800, 800); ctx.restore()
 
     canvas.toBlob(async (rawBlob) => {
+      setScreenFlash(false)
       setFlash(true)
       setTimeout(() => setFlash(false), 350)
       setPhase('aligning')
@@ -233,7 +276,12 @@ export default function Camera({ onCaptureDone }) {
       <canvas ref={overlayRef} className="absolute inset-0 w-full h-full" />
       <canvas ref={captureCanvasRef} className="hidden" />
 
-      {/* Flash blanc à la capture */}
+      {/* Screen flash : illumine avant capture (quand torch non dispo) */}
+      {screenFlash && (
+        <div className="absolute inset-0 bg-white z-20 pointer-events-none" />
+      )}
+
+      {/* Flash blanc post-capture */}
       {flash && (
         <div className="absolute inset-0 bg-white z-10 animate-fade-out pointer-events-none" />
       )}
@@ -257,6 +305,20 @@ export default function Camera({ onCaptureDone }) {
 
       {phase === 'ready' && (
         <>
+          {/* Bouton flash */}
+          <button
+            onClick={toggleFlash}
+            className={`absolute top-5 right-5 z-10 w-10 h-10 rounded-full flex items-center justify-center transition-all
+              ${flashEnabled
+                ? 'bg-yellow-400 text-black shadow-[0_0_16px_rgba(250,204,21,0.6)]'
+                : isDark
+                  ? 'bg-white/15 text-yellow-300 animate-pulse'
+                  : 'bg-white/8 text-white/40'
+              }`}
+          >
+            <FlashIcon />
+          </button>
+
           <div className="absolute top-6 inset-x-0 flex flex-col items-center gap-2 pointer-events-none">
             <div className="flex items-center gap-2">
               <div className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${faceOk ? 'bg-green-400 animate-pulse' : 'bg-white/30'}`} />
@@ -295,6 +357,14 @@ export default function Camera({ onCaptureDone }) {
         </>
       )}
     </div>
+  )
+}
+
+function FlashIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M13 2L4.09 12.96A1 1 0 0 0 5 14.5h5.5L11 22l8.91-10.96A1 1 0 0 0 19 9.5H13.5L13 2z" />
+    </svg>
   )
 }
 
