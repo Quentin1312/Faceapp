@@ -424,8 +424,9 @@ function AlreadyCaptured({ photo, capturedUrl, yearAgoUrl, streak, verdict, onCo
   return (
     <div className="flex flex-col h-full overflow-y-auto overscroll-none">
 
-      {/* Hero photo — plein bord, ratio portrait */}
-      <div className="relative w-full" style={{ aspectRatio: '4/5' }}>
+      {/* Hero photo — avec marges et coins arrondis */}
+      <div className="relative w-full px-4 pt-4">
+      <div className="relative w-full rounded-3xl overflow-hidden" style={{ aspectRatio: '4/5' }}>
         {capturedUrl && (
           <img src={capturedUrl} alt="Aujourd'hui" className="w-full h-full object-cover animate-fade-in" />
         )}
@@ -448,6 +449,7 @@ function AlreadyCaptured({ photo, capturedUrl, yearAgoUrl, streak, verdict, onCo
             <p className="text-white/35 text-[11px] text-center mt-1.5">« {photo.note} »</p>
           )}
         </div>
+      </div>
       </div>
 
       {/* Stats inline — compact, sans cards */}
