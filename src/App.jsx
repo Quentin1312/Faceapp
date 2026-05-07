@@ -24,8 +24,8 @@ export default function App() {
     <div
       className="bg-black text-white flex flex-col overflow-hidden"
       style={{
-        height: '100dvh',
-        paddingTop: 'env(safe-area-inset-top)',
+        height: '100%',
+        paddingTop: 'var(--sat)',
       }}
     >
       {/* min-h-0 est obligatoire pour que flex-1 ne déborde pas sur iOS */}
