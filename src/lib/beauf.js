@@ -77,3 +77,24 @@ export function ricardScore(streak) {
   if (streak > 0 && streak % 10 === 0) return streak / 10
   return null
 }
+
+export const NOTIF_TITLES = [
+  '📸 T\'as oublié quelque chose ?',
+  '🔥 Tes fans attendent !',
+  '👀 On te surveille champion !',
+  '📸 Moment de gloire !',
+  '⏰ C\'est l\'heure beauté !',
+]
+
+export const NOTIF_BODIES = [
+  'Bouge-toi de prendre ta photo, gros lard !',
+  'Ta belle gueule va pas se photographier toute seule !',
+  'Le Ricard peut attendre, la photo non !',
+  'Champion, c\'est l\'heure de ta capture quotidienne !',
+  'Même Mémé a pensé à prendre sa photo ce matin !',
+  'La belle gueule du jour se fait attendre !',
+  'T\'as une tête à faire peur mais on s\'en fout, prends la photo !',
+  'Allez le grand, c\'est l\'heure !',
+  'La série est en jeu, lâche pas maintenant !',
+  'Vas-y chéri, souris pour la postérité !',
+]

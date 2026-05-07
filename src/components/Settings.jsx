@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getNotifTime, setNotifTime, requestPermission, getPermission } from '../lib/notifications'
+import { getNotifTime, setNotifTime, requestPermission, getPermission, sendTestNotif, schedulePageTimer } from '../lib/notifications'
 import { getAllPhotos } from '../lib/db'
 
 export default function Settings() {
@@ -7,6 +7,7 @@ export default function Settings() {
   const [permission, setPermission] = useState(getPermission())
   const [stats, setStats] = useState({ total: 0, firstDate: null })
   const [saved, setSaved] = useState(false)
+  const [tested, setTested] = useState(false)
 
   useEffect(() => {
     getAllPhotos().then(photos => {
@@ -23,8 +24,15 @@ export default function Settings() {
 
   function saveTime() {
     setNotifTime(time)
+    schedulePageTimer(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
+  }
+
+  async function handleTest() {
+    await sendTestNotif()
+    setTested(true)
+    setTimeout(() => setTested(false), 3000)
   }
 
   const permLabel = {
@@ -58,6 +66,8 @@ export default function Settings() {
 
           <div className="h-px bg-border" />
 
+          <div className="h-px bg-border" />
+
           <button
             onClick={saveTime}
             className="w-full py-3.5 text-center text-sm text-white active:bg-white/5 transition-colors"
@@ -65,6 +75,15 @@ export default function Settings() {
             {saved ? '✓ Enregistré' : 'Enregistrer l\'heure'}
           </button>
         </div>
+
+        {permission === 'granted' && (
+          <button
+            onClick={handleTest}
+            className="w-full py-3.5 rounded-2xl border border-white/15 text-white/70 text-sm active:bg-white/5 transition-colors"
+          >
+            {tested ? '✓ Envoyée !' : '📲 Tester maintenant'}
+          </button>
+        )}
 
         {permission !== 'granted' && permission !== 'unsupported' && (
           <button
@@ -80,6 +99,10 @@ export default function Settings() {
             iOS : installe l'app sur l'écran d'accueil via Safari pour recevoir des notifications.
           </p>
         )}
+
+        <p className="text-white/20 text-xs text-center px-4">
+          La notif s'envoie à l'heure choisie si l'app est ouverte ou en arrière-plan.
+        </p>
       </section>
 
       {/* Stats section */}

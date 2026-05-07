@@ -5,7 +5,7 @@ import Calendar from './components/Calendar'
 import VideoReview from './components/VideoReview'
 import Settings from './components/Settings'
 import BottomNav from './components/BottomNav'
-import { checkAndNotify } from './lib/notifications'
+import { checkAndNotify, schedulePageTimer } from './lib/notifications'
 import { getTodayPhoto } from './lib/db'
 
 export default function App() {
@@ -13,7 +13,21 @@ export default function App() {
   const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
-    getTodayPhoto().then(p => checkAndNotify(!!p))
+    async function init() {
+      const p = await getTodayPhoto()
+      const hasPic = !!p
+      checkAndNotify(hasPic)
+      schedulePageTimer(hasPic)
+    }
+    init()
+
+    function onVisible() {
+      if (document.visibilityState === 'visible') {
+        getTodayPhoto().then(p => checkAndNotify(!!p))
+      }
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
   }, [])
 
   function handleCaptureDone() {
