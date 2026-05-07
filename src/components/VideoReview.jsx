@@ -24,7 +24,7 @@ export default function VideoReview() {
         ? await getPhotosForMonth(year, month)
         : await getPhotosForYear(year)
 
-      if (photos.length < 2) {
+      if (photos.length < 1) {
         setStatus('error')
         return
       }
@@ -125,7 +125,7 @@ export default function VideoReview() {
       {/* Error */}
       {status === 'error' && (
         <p className="text-red-400 text-sm text-center animate-fade-in">
-          Pas assez de photos pour générer une vidéo (minimum 2).
+          Aucune photo trouvée pour cette période.
         </p>
       )}
 
