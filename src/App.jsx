@@ -23,10 +23,7 @@ export default function App() {
   return (
     <div
       className="bg-black text-white flex flex-col overflow-hidden"
-      style={{
-        height: '100%',
-        paddingTop: 'var(--sat)',
-      }}
+      style={{ position: 'fixed', inset: 0, paddingTop: 'var(--sat)' }}
     >
       {/* min-h-0 est obligatoire pour que flex-1 ne déborde pas sur iOS */}
       <main className="flex-1 overflow-y-auto min-h-0 overscroll-none">
