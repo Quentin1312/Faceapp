@@ -422,125 +422,117 @@ function AlreadyCaptured({ photo, capturedUrl, yearAgoUrl, streak, verdict, onCo
   const DAY_LABELS = ['D', 'L', 'M', 'M', 'J', 'V', 'S']
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto overscroll-none pb-8">
+    <div className="flex flex-col h-full overflow-y-auto overscroll-none">
 
-      {/* Date header */}
-      <div className="px-5 pt-5 pb-3">
-        <p className="text-white/25 text-xs uppercase tracking-widest">
-          {format(now, 'EEEE d MMMM yyyy', { locale: fr })}
-        </p>
-      </div>
+      {/* Hero photo — plein bord, ratio portrait */}
+      <div className="relative w-full" style={{ aspectRatio: '4/5' }}>
+        {capturedUrl && (
+          <img src={capturedUrl} alt="Aujourd'hui" className="w-full h-full object-cover animate-fade-in" />
+        )}
 
-      {/* Photo + verdict */}
-      <div className="px-5">
-        <div className="relative rounded-3xl overflow-hidden aspect-square w-full">
-          {capturedUrl && (
-            <img src={capturedUrl} alt="Aujourd'hui" className="w-full h-full object-cover animate-fade-in" />
+        {/* Date + mood en haut */}
+        <div className="absolute top-0 inset-x-0 bg-gradient-to-b from-black/60 to-transparent px-4 pt-4 pb-10 flex items-center justify-between">
+          <p className="text-white/50 text-[10px] uppercase tracking-[0.22em]">
+            {format(now, 'EEE d MMM', { locale: fr })}
+          </p>
+          {photo?.mood && <span className="text-lg">{photo.mood}</span>}
+        </div>
+
+        {/* Verdict en bas */}
+        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/75 to-transparent px-5 pt-12 pb-5">
+          <p className="text-white/80 text-[13px] italic text-center leading-snug">
+            {animVerdict}
+            {!verdictDone && <span className="animate-pulse opacity-50">▌</span>}
+          </p>
+          {photo?.note && (
+            <p className="text-white/35 text-[11px] text-center mt-1.5">« {photo.note} »</p>
           )}
-          {photo?.mood && (
-            <div className="absolute top-3 right-3 text-2xl bg-black/50 backdrop-blur rounded-full w-10 h-10 flex items-center justify-center">
-              {photo.mood}
-            </div>
-          )}
-          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent px-4 pt-8 pb-4">
-            <p className="text-white/90 text-sm italic text-center min-h-[1.25rem]">
-              {animVerdict}
-              {!verdictDone && <span className="animate-pulse opacity-70">▌</span>}
-            </p>
-            {photo?.note && (
-              <p className="text-white/50 text-xs text-center mt-1">"{photo.note}"</p>
-            )}
-          </div>
         </div>
       </div>
 
-      {/* Stats row */}
-      <div className="px-5 pt-4 grid grid-cols-2 gap-3">
-        {/* Streak card */}
-        <div className="bg-white/5 rounded-2xl p-4 border border-white/8">
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-orange-400 text-xl">🔥</span>
-            <span className="text-white text-3xl font-bold tabular-nums">{animStreak}</span>
-          </div>
-          <p className="text-white/40 text-xs mt-1">jours de suite</p>
-          <p className="text-white/25 text-[10px] mt-0.5">{streakLabel(streak)}</p>
-          {ricard && <p className="text-amber-400/60 text-[9px] mt-1">🥃 ×{ricard}</p>}
+      {/* Stats inline — compact, sans cards */}
+      <div className="px-5 pt-5 flex items-center gap-4">
+        <div className="flex items-baseline gap-1">
+          <span className="text-orange-400 text-sm leading-none">🔥</span>
+          <span className="text-white text-2xl font-semibold tabular-nums leading-none">{animStreak}</span>
+          <span className="text-white/30 text-[11px] ml-0.5">j.</span>
         </div>
-
-        {/* Annual card */}
-        <div className="bg-white/5 rounded-2xl p-4 border border-white/8">
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-blue-400 text-xl">📅</span>
-            <span className="text-white text-3xl font-bold tabular-nums">{animYear}</span>
-          </div>
-          <p className="text-white/40 text-xs mt-1">cette année</p>
-          <p className="text-white/25 text-[10px] mt-0.5">{pct}% des jours</p>
+        <div className="w-px h-4 bg-white/10 flex-shrink-0" />
+        <div className="flex items-baseline gap-1">
+          <span className="text-white text-2xl font-semibold tabular-nums leading-none">{animYear}</span>
+          <span className="text-white/30 text-[11px] ml-0.5">cette année</span>
         </div>
+        {ricard && (
+          <>
+            <div className="w-px h-4 bg-white/10 flex-shrink-0" />
+            <span className="text-amber-400/55 text-[11px]">🥃 ×{ricard}</span>
+          </>
+        )}
       </div>
 
-      {/* Annual progress bar */}
+      {/* Ligne de progression — ultra fine */}
       <div className="px-5 pt-4">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-white/30 text-[10px] uppercase tracking-widest">Progression {now.getFullYear()}</p>
-          <p className="text-white/30 text-[10px]">{yearCount}/{totalDays}</p>
-        </div>
-        <div className="h-2 bg-white/8 rounded-full overflow-hidden">
+        <div className="h-[2px] bg-white/6 rounded-full overflow-hidden">
           <div
-            className="h-full rounded-full transition-all duration-700"
+            className="h-full rounded-full transition-all duration-1000"
             style={{
               width: `${pct}%`,
               background: pct >= 80 ? 'linear-gradient(90deg,#f97316,#ef4444)'
-                        : pct >= 50 ? 'linear-gradient(90deg,#3b82f6,#8b5cf6)'
-                        : 'linear-gradient(90deg,#6b7280,#9ca3af)'
+                        : pct >= 50 ? 'linear-gradient(90deg,#6366f1,#a78bfa)'
+                        : 'rgba(255,255,255,0.18)'
             }}
           />
         </div>
-        <p className="text-white/40 text-[11px] mt-2 text-right italic">{annualVerdict(pct)}</p>
+        <div className="flex justify-between mt-1.5">
+          <p className="text-white/18 text-[9px] uppercase tracking-widest">{now.getFullYear()}</p>
+          <p className="text-white/18 text-[9px]">{yearCount} / {totalDays}</p>
+        </div>
       </div>
 
-      {/* Last 7 days */}
+      {/* 7 derniers jours — points */}
       {last7.length > 0 && (
         <div className="px-5 pt-5">
-          <p className="text-white/25 text-[10px] uppercase tracking-widest mb-3">7 derniers jours</p>
-          <div className="flex gap-2 justify-between">
+          <div className="flex items-end justify-between">
             {last7.map(({ d, ok, isToday }, i) => (
               <div
                 key={d.toISOString()}
-                className="flex flex-col items-center gap-1.5 flex-1 animate-fade-in"
-                style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both', opacity: 0 }}
+                className="flex flex-col items-center gap-2"
+                style={{ animationDelay: `${i * 50}ms` }}
               >
-                <p className="text-white/30 text-[9px] uppercase">{DAY_LABELS[d.getDay()]}</p>
-                <div className={`w-full aspect-square rounded-xl flex items-center justify-center transition-all
-                  ${isToday ? 'ring-1 ring-white/40' : ''}
-                  ${ok ? 'bg-green-500/30 shadow-[0_0_8px_rgba(34,197,94,0.3)]' : 'bg-white/5'}`}>
-                  <span className={`text-sm ${ok ? 'text-green-400' : 'text-white/15'}`}>{ok ? '✓' : '·'}</span>
-                </div>
-                <p className={`text-[9px] ${isToday ? 'text-white/60' : 'text-white/20'}`}>{d.getDate()}</p>
+                <p className="text-white/20 text-[9px]">{DAY_LABELS[d.getDay()]}</p>
+                <div className={`rounded-full transition-all duration-300
+                  ${ok ? 'w-2 h-2 bg-green-400' : 'w-1.5 h-1.5 bg-white/12'}
+                  ${isToday ? 'ring-1 ring-white/30 ring-offset-[2px] ring-offset-black' : ''}`}
+                />
+                <p className={`text-[9px] tabular-nums ${isToday ? 'text-white/50' : 'text-white/18'}`}>{d.getDate()}</p>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Compare button */}
-      <div className="px-5 pt-5">
+      {/* Actions */}
+      <div className="px-5 pt-5 pb-8 flex gap-3 items-stretch">
         <button
           onClick={onCompare}
-          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-white/12 text-white/60 text-sm active:bg-white/8 transition-colors"
+          className="flex-1 py-3 rounded-2xl border border-white/8 text-white/40 text-[12px] tracking-wide active:bg-white/5 transition-colors"
         >
-          ⇄ Comparer avec le passé
+          ⇄ Comparer
         </button>
+
+        {yearAgoUrl && (
+          <button
+            onClick={onCompare}
+            className="relative w-14 rounded-2xl overflow-hidden border border-white/8 flex-shrink-0 active:opacity-70 transition-opacity"
+          >
+            <img src={yearAgoUrl} alt="Il y a 1 an" className="w-full h-full object-cover opacity-60" />
+            <div className="absolute inset-0 flex items-end justify-center pb-1.5">
+              <span className="text-white/70 text-[8px] tracking-wide">−1 an</span>
+            </div>
+          </button>
+        )}
       </div>
 
-      {/* Year ago */}
-      {yearAgoUrl && (
-        <div className="px-5 pt-5">
-          <p className="text-white/25 text-[10px] uppercase tracking-widest mb-3">Toi il y a 1 an 👀</p>
-          <div className="rounded-3xl overflow-hidden aspect-square w-full">
-            <img src={yearAgoUrl} alt="Il y a 1 an" className="w-full h-full object-cover" />
-          </div>
-        </div>
-      )}
     </div>
   )
 }
