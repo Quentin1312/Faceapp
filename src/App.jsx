@@ -21,15 +21,23 @@ export default function App() {
   }
 
   return (
-    <div className="fixed inset-0 bg-black text-white flex flex-col overflow-hidden">
-      <main className="flex-1 overflow-y-auto pb-[72px]" style={{ height: '100%' }}>
-        {tab === 'camera' && <Camera onCaptureDone={handleCaptureDone} key={refreshKey} />}
-        {tab === 'timeline' && <Timeline refreshKey={refreshKey} />}
-        {tab === 'calendar' && <Calendar refreshKey={refreshKey} />}
-        {tab === 'video' && <VideoReview />}
-        {tab === 'settings' && <Settings />}
+    <div
+      className="bg-black text-white flex flex-col overflow-hidden"
+      style={{
+        height: '100dvh',
+        paddingTop: 'env(safe-area-inset-top)',
+      }}
+    >
+      {/* min-h-0 est obligatoire pour que flex-1 ne déborde pas sur iOS */}
+      <main className="flex-1 overflow-y-auto min-h-0">
+        {tab === 'camera'    && <Camera onCaptureDone={handleCaptureDone} key={refreshKey} />}
+        {tab === 'timeline'  && <Timeline refreshKey={refreshKey} />}
+        {tab === 'calendar'  && <Calendar refreshKey={refreshKey} />}
+        {tab === 'video'     && <VideoReview />}
+        {tab === 'settings'  && <Settings />}
       </main>
 
+      {/* Nav dans le flux flex — ne flotte plus, ne remonte plus */}
       <BottomNav active={tab} onChange={setTab} />
     </div>
   )
