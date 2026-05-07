@@ -4,6 +4,7 @@ import { alignFace } from '../lib/faceAlignment'
 import { savePhoto, getTodayPhoto, getPhotoByDate, getStreak, updatePhoto, toDateId } from '../lib/db'
 import NoteModal from './NoteModal'
 import ComparisonSlider from './ComparisonSlider'
+import { pick, FACE_DETECTED, CAPTURE_BTN, VERDICTS, ALIGNING, streakLabel, ricardScore } from '../lib/beauf'
 
 export default function Camera({ onCaptureDone }) {
   const videoRef = useRef(null)
@@ -24,6 +25,11 @@ export default function Camera({ onCaptureDone }) {
   const [yearAgoUrl, setYearAgoUrl] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
   const [showComparison, setShowComparison] = useState(false)
+  const [flash, setFlash] = useState(false)
+  const [faceMsg] = useState(() => pick(FACE_DETECTED))
+  const [captureMsg] = useState(() => pick(CAPTURE_BTN))
+  const [alignMsg] = useState(() => pick(ALIGNING))
+  const [verdict] = useState(() => pick(VERDICTS))
 
   useEffect(() => {
     async function boot() {
@@ -169,6 +175,8 @@ export default function Camera({ onCaptureDone }) {
     ctx.drawImage(video, sx, sy, size, size, 0, 0, 800, 800); ctx.restore()
 
     canvas.toBlob(async (rawBlob) => {
+      setFlash(true)
+      setTimeout(() => setFlash(false), 350)
       setPhase('aligning')
       const { blob, eyePositions } = await alignFace(rawBlob)
       const record = await savePhoto(blob, null)
@@ -206,6 +214,7 @@ export default function Camera({ onCaptureDone }) {
           capturedUrl={capturedUrl}
           yearAgoUrl={yearAgoUrl}
           streak={streak}
+          verdict={verdict}
           onCompare={() => setShowComparison(true)}
         />
         {showComparison && todayRecord && (
@@ -237,10 +246,16 @@ export default function Camera({ onCaptureDone }) {
       <canvas ref={overlayRef} className="absolute inset-0 w-full h-full" />
       <canvas ref={captureCanvasRef} className="hidden" />
 
+      {/* Flash blanc à la capture */}
+      {flash && (
+        <div className="absolute inset-0 bg-white z-10 animate-fade-out pointer-events-none" />
+      )}
+
       {(phase === 'init' || phase === 'loading') && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black">
           <div className="w-8 h-8 border border-white/20 border-t-white rounded-full animate-spin" />
           <p className="text-white/40 text-xs tracking-widest uppercase">Initialisation</p>
+          <p className="text-white/20 text-[10px]">Le beau gosse se prépare...</p>
         </div>
       )}
 
@@ -248,7 +263,7 @@ export default function Camera({ onCaptureDone }) {
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80">
           <div className="w-8 h-8 border border-white/20 border-t-white rounded-full animate-spin" />
           <p className="text-white/50 text-xs tracking-widest uppercase">
-            {phase === 'aligning' ? 'Alignement…' : 'Capture…'}
+            {phase === 'aligning' ? alignMsg : 'Capture…'}
           </p>
         </div>
       )}
@@ -259,13 +274,13 @@ export default function Camera({ onCaptureDone }) {
             <div className="flex items-center gap-2">
               <div className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${faceOk ? 'bg-green-400 animate-pulse' : 'bg-white/30'}`} />
               <p className={`text-[11px] tracking-[0.25em] uppercase font-light transition-colors duration-300 ${faceOk ? 'text-green-400' : 'text-white/50'}`}>
-                {faceOk ? 'Visage détecté' : 'Scan facial'}
+                {faceOk ? faceMsg : 'Scan facial'}
               </p>
             </div>
             {streak > 0 && (
               <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur rounded-full px-3 py-1">
                 <span className="text-orange-400 text-xs">🔥</span>
-                <span className="text-white/80 text-xs">{streak} jour{streak > 1 ? 's' : ''}</span>
+                <span className="text-white/80 text-xs">{streak} jour{streak > 1 ? 's' : ''} — {streakLabel(streak)}</span>
               </div>
             )}
           </div>
@@ -287,7 +302,7 @@ export default function Camera({ onCaptureDone }) {
               </div>
             </button>
             <p className={`text-[11px] tracking-[0.2em] uppercase transition-colors duration-300 ${faceOk ? 'text-green-400' : 'text-white/30'}`}>
-              {faceOk ? 'Appuyer pour capturer' : 'Centre ton visage'}
+              {faceOk ? captureMsg : 'Centre ton visage'}
             </p>
           </div>
         </>
@@ -308,14 +323,22 @@ function FaceIcon({ active }) {
   )
 }
 
-function AlreadyCaptured({ photo, capturedUrl, yearAgoUrl, streak, onCompare }) {
+function AlreadyCaptured({ photo, capturedUrl, yearAgoUrl, streak, verdict, onCompare }) {
+  const ricard = ricardScore(streak)
+
   return (
     <div className="flex flex-col items-center gap-5 px-6 py-8 h-full overflow-y-auto overscroll-none">
       {/* Streak */}
-      <div className="flex items-center gap-2">
-        <span className="text-orange-400 text-2xl">🔥</span>
-        <span className="text-white text-2xl font-bold">{streak}</span>
-        <span className="text-white/50 text-sm">jour{streak > 1 ? 's' : ''}</span>
+      <div className="flex flex-col items-center gap-1">
+        <div className="flex items-center gap-2">
+          <span className="text-orange-400 text-2xl">🔥</span>
+          <span className="text-white text-2xl font-bold">{streak}</span>
+          <span className="text-white/50 text-sm">jour{streak > 1 ? 's' : ''}</span>
+        </div>
+        <p className="text-white/30 text-xs">{streakLabel(streak)}</p>
+        {ricard && (
+          <p className="text-amber-400/70 text-[10px] mt-0.5">🥃 {ricard} Ricard{ricard > 1 ? 's' : ''} de beauté</p>
+        )}
       </div>
 
       {/* Today's photo */}
@@ -326,14 +349,18 @@ function AlreadyCaptured({ photo, capturedUrl, yearAgoUrl, streak, onCompare }) 
             {photo.mood}
           </div>
         )}
+        {/* Verdict badge */}
+        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent px-3 py-2">
+          <p className="text-white/80 text-xs text-center italic">{verdict}</p>
+        </div>
       </div>
 
-      <p className="text-white/40 text-xs uppercase tracking-widest">Aujourd'hui</p>
+      <p className="text-white/30 text-[10px] uppercase tracking-widest">Aujourd'hui · Photo enregistrée</p>
 
       {/* Note */}
-      {photo?.note ? (
+      {photo?.note && (
         <p className="text-white/50 text-sm text-center max-w-xs italic">"{photo.note}"</p>
-      ) : null}
+      )}
 
       {/* Compare button */}
       <button
@@ -347,10 +374,10 @@ function AlreadyCaptured({ photo, capturedUrl, yearAgoUrl, streak, onCompare }) 
       {yearAgoUrl && (
         <>
           <div className="w-full max-w-xs h-px bg-white/10" />
+          <p className="text-white/25 text-[10px] uppercase tracking-widest">Toi il y a 1 an 👀</p>
           <div className="w-full max-w-xs aspect-square rounded-2xl overflow-hidden">
             <img src={yearAgoUrl} alt="Il y a 1 an" className="w-full h-full object-cover" />
           </div>
-          <p className="text-white/40 text-xs uppercase tracking-widest">Il y a 1 an</p>
         </>
       )}
     </div>
