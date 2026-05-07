@@ -3,9 +3,11 @@ import { initFaceDetector, detectForVideo, analyzeFace } from '../lib/faceDetect
 import { alignFace } from '../lib/faceAlignment'
 import { savePhoto, getTodayPhoto, getPhotoByDate, getStreak, updatePhoto, getAllPhotos, getPhotosForYear, toDateId } from '../lib/db'
 import ComparisonSlider from './ComparisonSlider'
+import Confetti from './Confetti'
 import { pick, FACE_DETECTED, CAPTURE_BTN, VERDICTS, ALIGNING, streakLabel, ricardScore, annualVerdict } from '../lib/beauf'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import { useCountUp, useTypewriter } from '../lib/hooks'
 
 export default function Camera({ onCaptureDone }) {
   const videoRef = useRef(null)
@@ -30,6 +32,7 @@ export default function Camera({ onCaptureDone }) {
   const [yearAgoUrl, setYearAgoUrl] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
   const [showComparison, setShowComparison] = useState(false)
+  const [justCaptured, setJustCaptured] = useState(false)
   const [flash, setFlash] = useState(false)
   const [screenFlash, setScreenFlash] = useState(false)
   const [flashEnabled, setFlashEnabled] = useState(false)
@@ -231,6 +234,8 @@ export default function Camera({ onCaptureDone }) {
       setCapturedUrl(URL.createObjectURL(blob))
       await loadYearAgo()
       cleanup()
+      setJustCaptured(true)
+      setTimeout(() => setJustCaptured(false), 3500)
       setPhase('done')
       onCaptureDone?.()
     }, 'image/jpeg', 0.88)
@@ -241,6 +246,7 @@ export default function Camera({ onCaptureDone }) {
   if (phase === 'already' || phase === 'done') {
     return (
       <>
+        <Confetti active={justCaptured} />
         <AlreadyCaptured
           photo={todayRecord}
           capturedUrl={capturedUrl}
@@ -338,6 +344,10 @@ export default function Camera({ onCaptureDone }) {
 
           <div className="absolute bottom-10 inset-x-0 flex flex-col items-center gap-4">
             <button onClick={doCapture} disabled={!faceOk} className="relative w-24 h-24 flex items-center justify-center">
+              {faceOk && <>
+                <span className="absolute inset-0 rounded-full border-2 border-green-400/40 animate-ping" style={{ animationDuration: '1.2s' }} />
+                <span className="absolute inset-[-12px] rounded-full border border-green-400/20 animate-ping" style={{ animationDuration: '1.8s', animationDelay: '0.3s' }} />
+              </>}
               <svg className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${faceOk ? 'opacity-100 animate-spin' : 'opacity-0'}`}
                 style={{ animationDuration: '5s' }} viewBox="0 0 96 96">
                 <circle cx="48" cy="48" r="46" fill="none" stroke="#22c55e" strokeWidth="1.5" strokeDasharray="10 7" strokeLinecap="round" />
@@ -390,6 +400,11 @@ function AlreadyCaptured({ photo, capturedUrl, yearAgoUrl, streak, verdict, onCo
   const totalDays = (now.getFullYear() % 4 === 0) ? 366 : 365
   const pct = yearCount ? Math.round((yearCount / totalDays) * 100) : 0
 
+  const animStreak = useCountUp(streak)
+  const animYear = useCountUp(yearCount)
+  const animVerdict = useTypewriter(verdict, 32)
+  const verdictDone = animVerdict.length === verdict.length
+
   useEffect(() => {
     const year = now.getFullYear()
     getPhotosForYear(year).then(p => setYearCount(p.length))
@@ -428,7 +443,10 @@ function AlreadyCaptured({ photo, capturedUrl, yearAgoUrl, streak, verdict, onCo
             </div>
           )}
           <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent px-4 pt-8 pb-4">
-            <p className="text-white/90 text-sm italic text-center">{verdict}</p>
+            <p className="text-white/90 text-sm italic text-center min-h-[1.25rem]">
+              {animVerdict}
+              {!verdictDone && <span className="animate-pulse opacity-70">▌</span>}
+            </p>
             {photo?.note && (
               <p className="text-white/50 text-xs text-center mt-1">"{photo.note}"</p>
             )}
@@ -442,7 +460,7 @@ function AlreadyCaptured({ photo, capturedUrl, yearAgoUrl, streak, verdict, onCo
         <div className="bg-white/5 rounded-2xl p-4 border border-white/8">
           <div className="flex items-baseline gap-1.5">
             <span className="text-orange-400 text-xl">🔥</span>
-            <span className="text-white text-3xl font-bold">{streak}</span>
+            <span className="text-white text-3xl font-bold tabular-nums">{animStreak}</span>
           </div>
           <p className="text-white/40 text-xs mt-1">jours de suite</p>
           <p className="text-white/25 text-[10px] mt-0.5">{streakLabel(streak)}</p>
@@ -453,7 +471,7 @@ function AlreadyCaptured({ photo, capturedUrl, yearAgoUrl, streak, verdict, onCo
         <div className="bg-white/5 rounded-2xl p-4 border border-white/8">
           <div className="flex items-baseline gap-1.5">
             <span className="text-blue-400 text-xl">📅</span>
-            <span className="text-white text-3xl font-bold">{yearCount}</span>
+            <span className="text-white text-3xl font-bold tabular-nums">{animYear}</span>
           </div>
           <p className="text-white/40 text-xs mt-1">cette année</p>
           <p className="text-white/25 text-[10px] mt-0.5">{pct}% des jours</p>
@@ -485,13 +503,17 @@ function AlreadyCaptured({ photo, capturedUrl, yearAgoUrl, streak, verdict, onCo
         <div className="px-5 pt-5">
           <p className="text-white/25 text-[10px] uppercase tracking-widest mb-3">7 derniers jours</p>
           <div className="flex gap-2 justify-between">
-            {last7.map(({ d, ok, isToday }) => (
-              <div key={d.toISOString()} className="flex flex-col items-center gap-1.5 flex-1">
+            {last7.map(({ d, ok, isToday }, i) => (
+              <div
+                key={d.toISOString()}
+                className="flex flex-col items-center gap-1.5 flex-1 animate-fade-in"
+                style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both', opacity: 0 }}
+              >
                 <p className="text-white/30 text-[9px] uppercase">{DAY_LABELS[d.getDay()]}</p>
-                <div className={`w-full aspect-square rounded-xl flex items-center justify-center
-                  ${isToday ? 'ring-1 ring-white/30' : ''}
-                  ${ok ? 'bg-green-500/25' : 'bg-white/5'}`}>
-                  <span className="text-base">{ok ? '✓' : '·'}</span>
+                <div className={`w-full aspect-square rounded-xl flex items-center justify-center transition-all
+                  ${isToday ? 'ring-1 ring-white/40' : ''}
+                  ${ok ? 'bg-green-500/30 shadow-[0_0_8px_rgba(34,197,94,0.3)]' : 'bg-white/5'}`}>
+                  <span className={`text-sm ${ok ? 'text-green-400' : 'text-white/15'}`}>{ok ? '✓' : '·'}</span>
                 </div>
                 <p className={`text-[9px] ${isToday ? 'text-white/60' : 'text-white/20'}`}>{d.getDate()}</p>
               </div>
