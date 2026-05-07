@@ -1,8 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
 import { initFaceDetector, detectForVideo, analyzeFace } from '../lib/faceDetection'
 import { alignFace } from '../lib/faceAlignment'
-import { savePhoto, getTodayPhoto, getPhotoByDate, getStreak, updatePhoto, toDateId } from '../lib/db'
-import NoteModal from './NoteModal'
+import { savePhoto, getTodayPhoto, getPhotoByDate, getStreak, updatePhoto } from '../lib/db'
 import ComparisonSlider from './ComparisonSlider'
 import { pick, FACE_DETECTED, CAPTURE_BTN, VERDICTS, ALIGNING, streakLabel, ricardScore } from '../lib/beauf'
 
@@ -187,24 +186,12 @@ export default function Camera({ onCaptureDone }) {
       setCapturedUrl(URL.createObjectURL(blob))
       await loadYearAgo()
       cleanup()
-      setPhase('note')
+      setPhase('done')
+      onCaptureDone?.()
     }, 'image/jpeg', 0.88)
   }, [])
 
-  async function handleNoteSave({ mood, note }) {
-    if (todayRecord && (mood || note)) {
-      await updatePhoto(toDateId(new Date()), { mood, note })
-      setTodayRecord(r => ({ ...r, mood, note }))
-    }
-    setPhase('done')
-    onCaptureDone?.()
-  }
-
   // ── Render ───────────────────────────────────────────────────────────────────
-
-  if (phase === 'note') {
-    return <NoteModal onSave={handleNoteSave} onSkip={() => { setPhase('done'); onCaptureDone?.() }} />
-  }
 
   if (phase === 'already' || phase === 'done') {
     return (

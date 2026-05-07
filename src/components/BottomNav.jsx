@@ -10,7 +10,7 @@ export default function BottomNav({ active, onChange }) {
   return (
     <nav
       className="shrink-0 bg-black border-t border-white/10"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      style={{ paddingBottom: 'var(--sab)' }}
     >
       <div className="flex">
         {TABS.map(tab => {
