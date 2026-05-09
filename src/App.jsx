@@ -40,7 +40,7 @@ export default function App() {
       style={{ height: '100dvh', paddingTop: 'env(safe-area-inset-top)' }}
     >
       <main
-        className="flex-1 min-h-0 overflow-y-auto overscroll-none"
+        className="flex-1 min-h-0 overflow-y-auto overscroll-none flex flex-col"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {tab === 'camera'    && <Camera onCaptureDone={handleCaptureDone} key={refreshKey} />}

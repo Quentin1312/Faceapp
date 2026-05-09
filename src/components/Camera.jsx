@@ -271,7 +271,7 @@ export default function Camera({ onCaptureDone }) {
 
   if (phase === 'already' || phase === 'done') {
     return (
-      <>
+      <div className="flex-1 min-h-0 flex flex-col">
         <Confetti active={justCaptured} />
         <AlreadyCaptured
           photo={todayRecord}
@@ -284,13 +284,13 @@ export default function Camera({ onCaptureDone }) {
         {showComparison && todayRecord && (
           <ComparisonSlider basePhoto={todayRecord} onClose={() => setShowComparison(false)} />
         )}
-      </>
+      </div>
     )
   }
 
   if (phase === 'error') {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-6 px-8 text-center">
+      <div className="flex-1 flex flex-col items-center justify-center gap-6 px-8 text-center">
         <div className="text-4xl">📵</div>
         <p className="text-white/70 text-sm">{errorMsg}</p>
         <button onClick={() => { setPhase('loading'); startCamera() }}
@@ -302,7 +302,7 @@ export default function Camera({ onCaptureDone }) {
   }
 
   return (
-    <div className="relative w-full h-full bg-black overflow-hidden">
+    <div className="flex-1 relative bg-black overflow-hidden">
       <video ref={videoRef} playsInline muted
         className="absolute inset-0 w-full h-full object-cover"
         style={{ transform: 'scaleX(-1)' }}
@@ -461,38 +461,38 @@ function AlreadyCaptured({ photo, capturedUrl, yearAgoUrl, streak, verdict, onCo
   }
 
   return (
-    <div className="flex flex-col pb-4">
+    <div className="flex-1 min-h-0 flex flex-col">
 
-      {/* Hero photo — avec marges et coins arrondis */}
-      <div className="relative w-full px-4 pt-4">
-      <div className="relative w-full rounded-3xl overflow-hidden" style={{ aspectRatio: '4/5' }}>
-        {capturedUrl && (
-          <img src={capturedUrl} alt="Aujourd'hui" className="w-full h-full object-cover animate-fade-in" />
-        )}
-
-        {/* Date + mood en haut */}
-        <div className="absolute top-0 inset-x-0 bg-gradient-to-b from-black/60 to-transparent px-4 pt-4 pb-10 flex items-center justify-between">
-          <p className="text-white/50 text-[10px] uppercase tracking-[0.22em]">
-            {format(now, 'EEE d MMM', { locale: fr })}
-          </p>
-          {photo?.mood && <span className="text-lg">{photo.mood}</span>}
-        </div>
-
-        {/* Verdict en bas */}
-        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/75 to-transparent px-5 pt-12 pb-5">
-          <p className="text-white/80 text-[13px] italic text-center leading-snug">
-            {animVerdict}
-            {!verdictDone && <span className="animate-pulse opacity-50">▌</span>}
-          </p>
-          {photo?.note && (
-            <p className="text-white/35 text-[11px] text-center mt-1.5">« {photo.note} »</p>
+      {/* Hero photo — remplit l'espace disponible, s'adapte à la hauteur d'écran */}
+      <div className="flex-1 min-h-0 px-4 pt-4">
+        <div className="relative w-full h-full rounded-3xl overflow-hidden">
+          {capturedUrl && (
+            <img src={capturedUrl} alt="Aujourd'hui" className="w-full h-full object-cover animate-fade-in" />
           )}
+
+          {/* Date + mood en haut */}
+          <div className="absolute top-0 inset-x-0 bg-gradient-to-b from-black/60 to-transparent px-4 pt-4 pb-10 flex items-center justify-between">
+            <p className="text-white/50 text-[10px] uppercase tracking-[0.22em]">
+              {format(now, 'EEE d MMM', { locale: fr })}
+            </p>
+            {photo?.mood && <span className="text-lg">{photo.mood}</span>}
+          </div>
+
+          {/* Verdict en bas */}
+          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/75 to-transparent px-5 pt-12 pb-5">
+            <p className="text-white/80 text-[13px] italic text-center leading-snug">
+              {animVerdict}
+              {!verdictDone && <span className="animate-pulse opacity-50">▌</span>}
+            </p>
+            {photo?.note && (
+              <p className="text-white/35 text-[11px] text-center mt-1.5">« {photo.note} »</p>
+            )}
+          </div>
         </div>
       </div>
-      </div>
 
-      {/* Stats inline — compact, sans cards */}
-      <div className="px-5 pt-5 flex items-center gap-4">
+      {/* Stats inline */}
+      <div className="px-5 pt-3 flex items-center gap-4">
         <div className="flex items-baseline gap-1">
           <span className="text-orange-400 text-sm leading-none">🔥</span>
           <span className="text-white text-2xl font-semibold tabular-nums leading-none">{animStreak}</span>
@@ -511,8 +511,8 @@ function AlreadyCaptured({ photo, capturedUrl, yearAgoUrl, streak, verdict, onCo
         )}
       </div>
 
-      {/* Ligne de progression — ultra fine */}
-      <div className="px-5 pt-4">
+      {/* Ligne de progression */}
+      <div className="px-5 pt-2">
         <div className="h-[2px] bg-white/6 rounded-full overflow-hidden">
           <div
             className="h-full rounded-full transition-all duration-1000"
@@ -524,22 +524,18 @@ function AlreadyCaptured({ photo, capturedUrl, yearAgoUrl, streak, verdict, onCo
             }}
           />
         </div>
-        <div className="flex justify-between mt-1.5">
+        <div className="flex justify-between mt-1">
           <p className="text-white/18 text-[9px] uppercase tracking-widest">{now.getFullYear()}</p>
           <p className="text-white/18 text-[9px]">{yearCount} / {totalDays}</p>
         </div>
       </div>
 
-      {/* 7 derniers jours — points */}
+      {/* 7 derniers jours */}
       {last7.length > 0 && (
-        <div className="px-5 pt-5">
+        <div className="px-5 pt-3">
           <div className="flex items-end justify-between">
             {last7.map(({ d, ok, isToday }, i) => (
-              <div
-                key={d.toISOString()}
-                className="flex flex-col items-center gap-2"
-                style={{ animationDelay: `${i * 50}ms` }}
-              >
+              <div key={d.toISOString()} className="flex flex-col items-center gap-1.5">
                 <p className="text-white/20 text-[9px]">{DAY_LABELS[d.getDay()]}</p>
                 <div className={`rounded-full transition-all duration-300
                   ${ok ? 'w-2 h-2 bg-green-400' : 'w-1.5 h-1.5 bg-white/12'}
@@ -553,7 +549,7 @@ function AlreadyCaptured({ photo, capturedUrl, yearAgoUrl, streak, verdict, onCo
       )}
 
       {/* Actions */}
-      <div className="px-5 pt-5 pb-8 flex gap-3 items-stretch">
+      <div className="px-5 pt-3 pb-4 flex gap-3 items-stretch">
         <button
           onClick={onCompare}
           className="flex-1 py-3 rounded-2xl border border-white/8 text-white/40 text-[12px] tracking-wide active:bg-white/5 transition-colors"
