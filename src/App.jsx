@@ -37,7 +37,7 @@ export default function App() {
   return (
     <div
       className="bg-black text-white flex flex-col overflow-hidden"
-      style={{ height: '100dvh', paddingTop: 'env(safe-area-inset-top)' }}
+      style={{ position: 'fixed', inset: 0, paddingTop: 'env(safe-area-inset-top)' }}
     >
       <main
         className="flex-1 min-h-0 overflow-y-auto overscroll-none flex flex-col"

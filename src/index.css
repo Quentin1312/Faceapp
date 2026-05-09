@@ -23,16 +23,14 @@
     background: #000;
     -webkit-font-smoothing: antialiased;
     font-family: system-ui, -apple-system, sans-serif;
-    height: 100dvh;
-    width: 100%;
+    position: fixed;
+    inset: 0;
   }
 
   #root {
-    height: 100dvh;
+    height: 100%;
     width: 100%;
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
   }
 
   button {
