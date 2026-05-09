@@ -3,6 +3,7 @@ import { getAllPhotos, deletePhoto } from '../lib/db'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import ComparisonSlider from './ComparisonSlider'
+import PhotoExport from './PhotoExport'
 
 export default function Timeline({ refreshKey }) {
   const [photos, setPhotos] = useState([])
@@ -80,9 +81,16 @@ export default function Timeline({ refreshKey }) {
 function PhotoModal({ photo, allPhotos, onClose, onDelete }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [comparing, setComparing] = useState(false)
+  const [exporting, setExporting] = useState(false)
+
+  const dayNumber = allPhotos.length - allPhotos.findIndex(p => p.id === photo.id)
 
   if (comparing) {
     return <ComparisonSlider basePhoto={photo} onClose={() => setComparing(false)} />
+  }
+
+  if (exporting) {
+    return <PhotoExport photo={photo} dayNumber={dayNumber} onClose={() => setExporting(false)} />
   }
 
   return (
@@ -114,16 +122,22 @@ function PhotoModal({ photo, allPhotos, onClose, onDelete }) {
         </div>
       )}
 
-      {allPhotos.length > 1 && (
-        <div className="px-6 pb-4 shrink-0">
+      <div className="px-6 pb-4 shrink-0 flex flex-col gap-2">
+        {allPhotos.length > 1 && (
           <button
             onClick={() => setComparing(true)}
             className="w-full py-3 rounded-2xl border border-white/15 text-white/70 text-sm active:bg-white/5"
           >
             Comparer avec le passé
           </button>
-        </div>
-      )}
+        )}
+        <button
+          onClick={() => setExporting(true)}
+          className="w-full py-3 rounded-2xl border border-white/15 text-white/70 text-sm active:bg-white/5"
+        >
+          Exporter · Jour {dayNumber}
+        </button>
+      </div>
 
       {confirmDelete && (
         <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-4 px-8">

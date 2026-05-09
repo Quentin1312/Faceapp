@@ -3,6 +3,7 @@ import { getPhotosForMonth, getPhotosForYear } from '../lib/db'
 import { generateVideo, downloadBlob } from '../lib/videoGenerator'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import Wrapped from './Wrapped'
 
 export default function VideoReview() {
   const [mode, setMode] = useState(null) // null | 'month' | 'year'
@@ -11,6 +12,12 @@ export default function VideoReview() {
   const [status, setStatus] = useState(null) // null | { label, pct } | 'done' | 'error'
   const [videoUrl, setVideoUrl] = useState(null)
   const [photoCount, setPhotoCount] = useState(0)
+
+  // Wrapped bilan state
+  const [wrappedScope, setWrappedScope] = useState('month') // 'month' | 'year'
+  const [wrappedYear, setWrappedYear] = useState(new Date().getFullYear())
+  const [wrappedMonth, setWrappedMonth] = useState(new Date().getMonth())
+  const [wrappedOpen, setWrappedOpen] = useState(false)
 
   const currentYear = new Date().getFullYear()
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i)
@@ -53,6 +60,15 @@ export default function VideoReview() {
 
   return (
     <div className="px-6 pt-8 pb-6 flex flex-col gap-6">
+      {wrappedOpen && (
+        <Wrapped
+          mode={wrappedScope}
+          year={wrappedYear}
+          month={wrappedMonth}
+          onClose={() => setWrappedOpen(false)}
+        />
+      )}
+
       <div>
         <h2 className="text-white font-semibold text-lg">Reviews vidéo</h2>
         <p className="text-white/40 text-xs mt-1">Génère un timelapse de tes photos</p>
@@ -144,6 +160,65 @@ export default function VideoReview() {
           </button>
         </div>
       )}
+
+      {/* Separator */}
+      <div className="h-px bg-white/8" />
+
+      {/* Bilan Wrapped */}
+      <div className="flex flex-col gap-3">
+        <div>
+          <h2 className="text-white font-semibold text-lg">Bilan</h2>
+          <p className="text-white/40 text-xs mt-1">Ton résumé photo à la Wrapped</p>
+        </div>
+
+        {/* Scope toggle */}
+        <div className="flex gap-2">
+          {['month', 'year'].map(s => (
+            <button
+              key={s}
+              onClick={() => setWrappedScope(s)}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors
+                ${wrappedScope === s ? 'bg-white text-black' : 'bg-surface text-white/60 border border-border'}`}
+            >
+              {s === 'month' ? 'Mensuel' : 'Annuel'}
+            </button>
+          ))}
+        </div>
+
+        {/* Selectors */}
+        <div className="flex gap-3">
+          <select
+            value={wrappedYear}
+            onChange={e => setWrappedYear(+e.target.value)}
+            className="flex-1 bg-surface border border-border rounded-xl px-4 py-3 text-white text-sm appearance-none"
+          >
+            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+
+          {wrappedScope === 'month' && (
+            <select
+              value={wrappedMonth}
+              onChange={e => setWrappedMonth(+e.target.value)}
+              className="flex-1 bg-surface border border-border rounded-xl px-4 py-3 text-white text-sm appearance-none capitalize"
+            >
+              {Array.from({ length: 12 }, (_, i) => i).map(m => (
+                <option key={m} value={m} className="capitalize">
+                  {format(new Date(2024, m, 1), 'MMMM', { locale: fr })}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        <button
+          onClick={() => setWrappedOpen(true)}
+          className="w-full py-3.5 rounded-xl bg-white text-black font-semibold text-sm active:bg-white/80 transition-opacity"
+        >
+          Voir le bilan ✦
+        </button>
+      </div>
     </div>
   )
 }
