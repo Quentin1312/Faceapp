@@ -37,10 +37,12 @@ export default function App() {
   return (
     <div
       className="bg-black text-white flex flex-col overflow-hidden"
-      style={{ position: 'fixed', inset: 0, paddingTop: 'var(--sat)' }}
+      style={{ height: '100dvh', paddingTop: 'env(safe-area-inset-top)' }}
     >
-      {/* min-h-0 est obligatoire pour que flex-1 ne déborde pas sur iOS */}
-      <main className="flex-1 overflow-y-auto min-h-0 overscroll-none">
+      <main
+        className="flex-1 min-h-0 overflow-y-auto overscroll-none"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
         {tab === 'camera'    && <Camera onCaptureDone={handleCaptureDone} key={refreshKey} />}
         {tab === 'timeline'  && <Timeline refreshKey={refreshKey} />}
         {tab === 'calendar'  && <Calendar refreshKey={refreshKey} />}
@@ -48,8 +50,7 @@ export default function App() {
         {tab === 'settings'  && <Settings />}
       </main>
 
-      {/* Nav toujours au-dessus du contenu caméra */}
-      <div className="relative z-50">
+      <div className="relative z-50 shrink-0">
         <BottomNav active={tab} onChange={setTab} />
       </div>
     </div>
