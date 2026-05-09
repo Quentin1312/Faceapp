@@ -3,6 +3,7 @@ import { initFaceDetector, detectForVideo, analyzeFace } from '../lib/faceDetect
 import { alignFace } from '../lib/faceAlignment'
 import { savePhoto, getTodayPhoto, getPhotoByDate, getStreak, updatePhoto, getAllPhotos, getPhotosForYear, toDateId } from '../lib/db'
 import ComparisonSlider from './ComparisonSlider'
+import PhotoExport from './PhotoExport'
 import Confetti from './Confetti'
 import { pick, FACE_DETECTED, CAPTURE_BTN, VERDICTS, ALIGNING, streakLabel, ricardScore, annualVerdict } from '../lib/beauf'
 import { format } from 'date-fns'
@@ -420,6 +421,8 @@ function FaceIcon({ active }) {
 function AlreadyCaptured({ photo, capturedUrl, yearAgoUrl, streak, verdict, onCompare }) {
   const [yearCount, setYearCount] = useState(0)
   const [last7, setLast7] = useState([])
+  const [totalPhotos, setTotalPhotos] = useState(0)
+  const [showExport, setShowExport] = useState(false)
   const ricard = ricardScore(streak)
   const now = new Date()
   const totalDays = (now.getFullYear() % 4 === 0) ? 366 : 365
@@ -434,6 +437,7 @@ function AlreadyCaptured({ photo, capturedUrl, yearAgoUrl, streak, verdict, onCo
     const year = now.getFullYear()
     getPhotosForYear(year).then(p => setYearCount(p.length))
     getAllPhotos().then(photos => {
+      setTotalPhotos(photos.length)
       const ids = new Set(photos.map(p => p.id))
       const days = []
       for (let i = 6; i >= 0; i--) {
@@ -445,6 +449,16 @@ function AlreadyCaptured({ photo, capturedUrl, yearAgoUrl, streak, verdict, onCo
   }, [])
 
   const DAY_LABELS = ['D', 'L', 'M', 'M', 'J', 'V', 'S']
+
+  if (showExport) {
+    return (
+      <PhotoExport
+        photo={{ ...photo, url: capturedUrl }}
+        dayNumber={totalPhotos}
+        onClose={() => setShowExport(false)}
+      />
+    )
+  }
 
   return (
     <div className="flex flex-col h-full overflow-y-auto overscroll-none">
@@ -545,6 +559,13 @@ function AlreadyCaptured({ photo, capturedUrl, yearAgoUrl, streak, verdict, onCo
           className="flex-1 py-3 rounded-2xl border border-white/8 text-white/40 text-[12px] tracking-wide active:bg-white/5 transition-colors"
         >
           ⇄ Comparer
+        </button>
+
+        <button
+          onClick={() => setShowExport(true)}
+          className="flex-1 py-3 rounded-2xl border border-white/8 text-white/40 text-[12px] tracking-wide active:bg-white/5 transition-colors"
+        >
+          ↑ Partager
         </button>
 
         {yearAgoUrl && (
