@@ -48,8 +48,10 @@ export default function App() {
         {tab === 'settings'  && <Settings />}
       </main>
 
-      {/* Nav dans le flux flex — ne flotte plus, ne remonte plus */}
-      <BottomNav active={tab} onChange={setTab} />
+      {/* Nav toujours au-dessus du contenu caméra */}
+      <div className="relative z-50">
+        <BottomNav active={tab} onChange={setTab} />
+      </div>
     </div>
   )
 }

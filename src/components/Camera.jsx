@@ -87,11 +87,24 @@ export default function Camera({ onCaptureDone }) {
       brightnessCanvasRef.current = document.createElement('canvas')
       brightnessCanvasRef.current.width = 32
       brightnessCanvasRef.current.height = 32
-      const det = await initFaceDetector()
-      detectorRef.current = det
+
+      // Caméra prête — on affiche le flux immédiatement
       setPhase('ready')
       startDetectionLoop()
+
+      // Détection faciale chargée en arrière-plan (peut échouer sur Android ancien)
+      try {
+        const det = await initFaceDetector()
+        detectorRef.current = det
+      } catch (detErr) {
+        console.warn('Face detection unavailable, fallback mode:', detErr)
+        // Fallback : pas de détection, l'utilisateur capture manuellement
+        detectorRef.current = null
+        faceOkRef.current = true
+        setFaceOk(true)
+      }
     } catch (err) {
+      streamRef.current?.getTracks().forEach(t => t.stop())
       setErrorMsg(err.name === 'NotAllowedError' ? 'Accès à la caméra refusé.' : `Erreur caméra : ${err.message}`)
       setPhase('error')
     }
@@ -104,21 +117,33 @@ export default function Camera({ onCaptureDone }) {
 
   function startDetectionLoop() {
     function loop() {
-      const video = videoRef.current
-      if (!video || video.readyState < 2) { rafRef.current = requestAnimationFrame(loop); return }
-      const result = detectForVideo(video, performance.now())
-      const { ok } = analyzeFace(result, video.videoWidth, video.videoHeight)
-      if (ok !== faceOkRef.current) { faceOkRef.current = ok; setFaceOk(ok); if (!ok) scanYRef.current = 0 }
-      drawOverlay(ok)
-      frameCountRef.current++
-      if (frameCountRef.current % 45 === 0 && brightnessCanvasRef.current) {
-        const bc = brightnessCanvasRef.current
-        const bctx = bc.getContext('2d')
-        bctx.drawImage(video, 0, 0, 32, 32)
-        const d = bctx.getImageData(0, 0, 32, 32).data
-        let s = 0
-        for (let i = 0; i < d.length; i += 4) s += d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114
-        setIsDark((s / (d.length / 4)) < 55)
+      try {
+        const video = videoRef.current
+        if (!video || video.readyState < 2) { rafRef.current = requestAnimationFrame(loop); return }
+
+        // Mode fallback sans détection faciale
+        if (!detectorRef.current) {
+          drawOverlay(true)
+          rafRef.current = requestAnimationFrame(loop)
+          return
+        }
+
+        const result = detectForVideo(video, performance.now())
+        const { ok } = analyzeFace(result, video.videoWidth, video.videoHeight)
+        if (ok !== faceOkRef.current) { faceOkRef.current = ok; setFaceOk(ok); if (!ok) scanYRef.current = 0 }
+        drawOverlay(ok)
+        frameCountRef.current++
+        if (frameCountRef.current % 45 === 0 && brightnessCanvasRef.current) {
+          const bc = brightnessCanvasRef.current
+          const bctx = bc.getContext('2d')
+          bctx.drawImage(video, 0, 0, 32, 32)
+          const d = bctx.getImageData(0, 0, 32, 32).data
+          let s = 0
+          for (let i = 0; i < d.length; i += 4) s += d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114
+          setIsDark((s / (d.length / 4)) < 55)
+        }
+      } catch (loopErr) {
+        console.warn('Detection loop error:', loopErr)
       }
       rafRef.current = requestAnimationFrame(loop)
     }
