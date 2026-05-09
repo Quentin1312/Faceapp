@@ -461,7 +461,7 @@ function AlreadyCaptured({ photo, capturedUrl, yearAgoUrl, streak, verdict, onCo
   }
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto overscroll-none">
+    <div className="flex flex-col pb-4">
 
       {/* Hero photo — avec marges et coins arrondis */}
       <div className="relative w-full px-4 pt-4">
